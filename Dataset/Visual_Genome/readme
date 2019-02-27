@@ -23,7 +23,10 @@ content
 
 -test_imgs_img_id2coco_id.txt	dict of {img_id->coco_id} in test images. Only contain images having coco id
 
+-vg1_2_meta.h5					downloaded annotations from vtranse website
+
 -ori_data
 
 	-img_id2coco_id.txt				img id -> coco id for image_data.json. strangely some images have the same coco id. 
 									if that happens, we make the second image corresponds to None
+
