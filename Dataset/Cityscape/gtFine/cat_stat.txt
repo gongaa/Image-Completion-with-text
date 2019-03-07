@@ -1,0 +1,85 @@
+cat_name         	cnt_t   cnt_v   cnt_s   icnt_t  icnt_v  icnt_s
+
+car      			27155   4667    31822    2831    478     3309		t
+truck    			  489     93      582     363     80      443		t
+bus      			  385     98      483     276     75      351		t
+train   			  171     23      194     145     22      167		t
+motorcycle      	  739    149      888     511     93      604		t
+bicycle         	 3729   1175     4904    1538    331     1869		t
+caravan         	   61      8       69      59      8       67		t
+trailer        		   76     13       89      72     13       85		t
+person   			17994   3419    21413    2326    402     2728		t
+rider   			 1807    556     2363    1024    254     1278		t
+pole    			42904   9844    52748    2950    491     3441		t
+polegroup       	  309     55      364     227     37      264		t	
+traffic sign    	20868   4108    24976    2811    473     3284		t
+traffic light   	10237   1661    11898    1661    291     1952		t
+vegetation      	15022   2723    17745    2891    486     3377		t
+
+cargroup       		1895    160     2055    1040    113     1153		t
+bicyclegroup    	816     233     1049    507     121     628			t
+persongroup     	927     142     1069    515     63      578			t
+
+motorcyclegroup     9       0       9       8       0       8			t
+ridergroup       	11      2       13      10      1       11			t
+truckgroup       	1       0       1       1       0       1 			t
+
+
+185
+priority:
+
+1. 	truckgroup
+	motorcyclegroup
+	ridergroup
+	caravan 
+	trailer
+	train: all images used to crop these two
+2.  polegroup				train 142, test 27
+	bus
+	truck
+	bicyclegroup
+	persongroup
+	motorcycle
+
+	rider
+	cargroup
+	bicycle
+	traffic light
+	person
+	vegetation
+	traffic sign
+	car
+	pole
+							for all the rest images, randomly crop anything inside
+
+
+motorcycle 153                                                                │cargroup 24
+bicyclegroup 148                                                              │caravan 8
+vegetation 222                                                                │bicycle 32
+motorcyclegroup 8                                                             │car 42
+bicycle 188                                                                   │bus 25
+traffic light 185                                                             │motorcycle 27
+persongroup 162                                                               │pole 39
+cargroup 158                                                                  │bicyclegroup 27
+bus 145                                                                       │polegroup 25
+truckgroup 1                                                                  │rider 30
+caravan 58                                                                    │truck 25
+person 192                                                                    │vegetation 36
+trailer 70                                                                    │train 22
+train 141                                                                     │traffic sign 34
+traffic sign 225                                                              │persongroup 24
+truck 151                                                                     │traffic light 33
+polegroup 147                                                                 │motorcyclegroup 0
+ridergroup 10                                                                 │ridergroup 1
+rider 162                                                                     │trailer 13
+car 218                                                                       │truckgroup 0
+pole 231                                                                      │person 33
+
+
+
+
+
+
+
+
+
