@@ -7,7 +7,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.data as data
 from torch.utils.data.sampler import Sampler
+
 from cityscape_utils import *
+from net_utils import *
 
 class Samplerian(Sampler):
 	def __init__(self, train_size, batch_size):
@@ -50,17 +52,23 @@ class DataLoaderian(data.Dataset):
 		assert masks.shape == (size, h, w), masks.shape
 		self.training = training
 		self.imgs = imgs
-		self.segs = self.transform_segs(segs)
 		self.masks = masks
 		self.n_classes = n_classes
+		self.segs = self._transform_segs(segs)
+		np.save("Dataset/Cityscape/train_data_dataloaderain_segs", self.segs)
+		sys.stdout.write("squeezing segs .... ")
+		tic = time.time()
+		self.gts = squeeze_seg_np(self.segs, self.n_classes)
+		np.save("Dataset/Cityscape/train_data_gt", self.gts)
+		print("cost {:.2f}-s".format(time.time()-tic))
 
-	def tranform_segs(self, segs):
+	def _transform_segs(self, segs):
 		'''
 			input segs (n, h, w, 3)
 			return segs (n, n_classes, h, w)
 		'''
 		N,H,W,C = segs.shape
-		new_segs = np.zeros((n, self.n_classes, h, w))
+		new_segs = np.zeros((N, self.n_classes, H, W))
 		sys.stdout.write("transforming segs ...... ") 
 		tic = time.time()
 		for b in range(N):
@@ -69,7 +77,7 @@ class DataLoaderian(data.Dataset):
 					cls = seg_color2index[tuple(segs[b, h, w].tolist())] 
 					new_segs[b, cls, h, w] = 1
 		toc = time.time()
-		sys.stdout.write("done! cost {}-s\n".format(toc-tic))
+		sys.stdout.write("done! cost {:.2f}-s\n".format(toc-tic))
 		return new_segs
 
 	def __getitem__(self, index):
@@ -82,7 +90,8 @@ class DataLoaderian(data.Dataset):
 		img = torch.from_numpy(self.imgs[index]).permute(2,0,1).contiguous()
 		seg = torch.from_numpy(self.segs[index])
 		mask = torch.from_numpy(self.masks[index])
-		return img, seg, mask
+		gt = torch.from_numpy(self.gts[index])
+		return img, seg, mask, gt
 
 	def __len__(self):
 		return self.imgs.shape[0]

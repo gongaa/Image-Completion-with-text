@@ -2,6 +2,7 @@ import os
 import sys
 import time
 import math
+import argparse
 
 import numpy as np
 import torch
@@ -16,6 +17,7 @@ from data_utils import get_data
 from models import *
 from net_utils import *
 
+from subprocess import call
 
 def parse_args():
 	"""
@@ -35,8 +37,8 @@ def parse_args():
 											default=1)
 	parser.add_argument('--model', dest='model',
 											help='model to use',
-											choices=['unet', 'wgan'],
-											default='unet')
+											choices=['u_net', 'wgan', 'encoder_decoder'],
+											default='u_net')
 	parser.add_argument('--start_epoch', dest='start_epoch',
 											help='starting epoch',
 											default=1, type=int)
@@ -106,6 +108,11 @@ def parse_args():
 
 
 if __name__ == '__main__':
+	args = parse_args()
+
+	print('Called with args:')
+	print(args)
+
 
 	####################### set up data loader for train and val ######################
 	n_classes, train_imgs, train_segs, train_masks, \
@@ -124,14 +131,16 @@ if __name__ == '__main__':
 														sampler=sampler_batch_val, num_workers=args.num_workers)
 
 	###################### set up model #####################
-	if args.model == "unet":
-		model = UNetModel(n_classes)
+	if args.model == "u_net":
+		model = Model(n_classes, "u_net")
+	elif args.model == "encoder_decoder":
+		model = Model(n_classes, "encoder_decoder")
 
 	###################### init variable #####################
 	im_data = torch.FloatTensor(1)
 	seg_data = torch.FloatTensor(1)
 	mask_data = torch.FloatTensor(1)
-	gt_data = torch.FloatTensor(1)
+	gt_data = torch.LongTensor(1)
 
 	if args.cuda:
 		im_data = im_data.cuda()
@@ -156,7 +165,7 @@ if __name__ == '__main__':
 		logger = SummaryWriter("logs")
 
 	##################### training begins #######################
-	iters_per_epoch = ceil(train_size / args.batch_size) 
+	iters_per_epoch = math.ceil(train_size / args.batch_size) 
 
 	if args.use_tfboard:
 		from tensorboardX import SummaryWriter
@@ -177,9 +186,8 @@ if __name__ == '__main__':
 			im_data.data.resize_(data[0].size()).copy_(data[0])
 			seg_data.data.resize_(data[1].size()).copy_(data[1])
 			mask_data.data.resize_(data[2].size()).copy_(data[2])
-			gt_data_i = squeeze_seg(data[2], n_classes)
-			gt_data.data.resize_(gt_data_i.size()).copy_(gt_data_i)
-
+			# gt_data_i = squeeze_seg(data[1], n_classes)
+			gt_data.data.resize_(data[3].size()).copy_(data[3])
 			model.zero_grad()
 
 			output_segs, rec_loss = model(im_data, seg_data, mask_data, gt_data) 
