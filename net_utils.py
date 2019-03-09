@@ -11,50 +11,17 @@ def adjust_learning_rate(optimizer, decay=0.1):
     for param_group in optimizer.param_groups:
         param_group['lr'] = decay * param_group['lr']
 
-
-def unsqueeze_seg(seg, n_cls):
+def transform_seg_one_hot(seg, n_cls):
 	'''
-		input  (n, h, w)
-		output (n, n_cls, h, w)
+		input tensor:
+			seg  (bs, h, w) Long Tensors
+			n_clss
+		output tensor
+			seg_one_hot  (bs, n_cls, h, w) float tensor
+
 	'''
-	bs, H, W = seg.size()
-
-	out_seg = torch.zeros((bs, n_cls, h, w))
-	for i in torch.arange(bs):
-		for h in torch.arange(H):
-			for w in torch.arange(W):
-				lbl_ind = seg[i, h, w]
-				out_seg[i, lbl_ind, h, w] = 1
-	return out_seg 
-
-
-def squeeze_seg(seg, n_cls):
-	'''
-		input  (n, n_cls, h, w)
-		output (n, h, w)
-	'''
-	bs, c, H, W = seg.size()
-	assert c == n_cls , "input seg channel is not n_cls"
-	lbls = torch.nonzero(seg)
-	out_seg = torch.zeros((bs, H, W))
-
-	for loc in lbls:
-		out_seg[loc[0], loc[2], loc[3]] = loc[1]
-	return out_seg
-
-def squeeze_seg_np(seg, n_cls):
-	'''
-		input  (n, n_cls, h, w)
-		output (n, h, w)
-	'''
-	bs, c, H, W = seg.shape
-	assert c == n_cls , "input seg channel is not n_cls"
-	lbls = np.transpose(np.nonzero(seg))
-	out_seg = np.zeros((bs, H, W))
-
-	for loc in lbls:
-		out_seg[loc[0], loc[2], loc[3]] = loc[1]
-	return out_seg
+	seg_one_hot = torch.eye(n_cls)[seg].permute(0,3,1,2).cuda()
+	return seg_one_hot
 
 
 def mask2box(mask):

@@ -9,6 +9,7 @@ import torch.utils.data as data
 from torch.utils.data.sampler import Sampler
 
 from cityscape_utils import *
+from cfg import cfg
 from net_utils import *
 
 class Samplerian(Sampler):
@@ -44,54 +45,47 @@ class DataLoaderian(data.Dataset):
 	def __init__(self, imgs, segs, masks, n_classes, training=True):
 		'''
 			imgs:  (n, h, w, 3)
-			segs:  (n, h, w, 3)
+			segs:  (n, h, w)
 			masks: (n, h, w)
 		'''
 		size, h, w, channel = imgs.shape
-		assert segs.shape == (size, h, w, channel), segs.shape
+		assert segs.shape == (size, h, w), segs.shape
 		assert masks.shape == (size, h, w), masks.shape
 		self.training = training
 		self.imgs = imgs
 		self.masks = masks
 		self.n_classes = n_classes
-		self.segs = self._transform_segs(segs)
-		np.save("Dataset/Cityscape/train_data_dataloaderain_segs", self.segs)
-		sys.stdout.write("squeezing segs .... ")
-		tic = time.time()
-		self.gts = squeeze_seg_np(self.segs, self.n_classes)
-		np.save("Dataset/Cityscape/train_data_gt", self.gts)
-		print("cost {:.2f}-s".format(time.time()-tic))
+		self.segs = segs
 
-	def _transform_segs(self, segs):
-		'''
-			input segs (n, h, w, 3)
-			return segs (n, n_classes, h, w)
-		'''
-		N,H,W,C = segs.shape
-		new_segs = np.zeros((N, self.n_classes, H, W))
-		sys.stdout.write("transforming segs ...... ") 
-		tic = time.time()
-		for b in range(N):
-			for h in range(H):
-				for w in range(W):
-					cls = seg_color2index[tuple(segs[b, h, w].tolist())] 
-					new_segs[b, cls, h, w] = 1
-		toc = time.time()
-		sys.stdout.write("done! cost {:.2f}-s\n".format(toc-tic))
-		return new_segs
+		# np.save("Dataset/Cityscape/train_data_dataloaderain_segs", self.segs)
+		# sys.stdout.write("squeezing segs .... ")
+		# tic = time.time()
+		# self.gts = squeeze_seg_np(self.segs, self.n_classes)
+		# np.save("Dataset/Cityscape/train_data_gt", self.gts)
+		# print("cost {:.2f}-s".format(time.time()-tic))
+
+	# def _transform_segs(self, segs):
+	# 	'''
+	# 		input segs (n, h, w)
+	# 		return segs (n, n_classes, h, w)
+	# 	'''
+	# 	N,H,W = segs.shape
+	# 	one_hot_index = np.eye(self.n_classes)
+	# 	segs_one_hot = one_hot_index[segs].transpose(0,3,1,2)
+
+	# 	return segs_one_hot
 
 	def __getitem__(self, index):
 		'''
 			return 
 				img  	(3, h, w)
-				seg:	(n_classes, h, w)
+				seg:	(h, w)
 				mask:	(h, w)	
 		'''
-		img = torch.from_numpy(self.imgs[index]).permute(2,0,1).contiguous()
+		img = torch.from_numpy(self.imgs[index]- cfg.CITYSCAPE.PIXEL_MEANS).permute(2,0,1).contiguous().float()
 		seg = torch.from_numpy(self.segs[index])
 		mask = torch.from_numpy(self.masks[index])
-		gt = torch.from_numpy(self.gts[index])
-		return img, seg, mask, gt
+		return img, seg, mask
 
 	def __len__(self):
 		return self.imgs.shape[0]

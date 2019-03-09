@@ -1,3 +1,5 @@
+import numpy as np
+
 seg_index2label={
 	0:'unlabeled'            ,
     # 'ego vehicle'          (  0,  0,  0) ,
@@ -38,8 +40,83 @@ seg_index2label={
     28:'bicycle'               
 }
 
+seg_id2index = {
+-1:0,
+0:0 ,       #unlabeled
+1:0 ,       #ego vehicle
+2:0 ,       #rectification border
+3:0 ,       #out of roi
+4:0 ,       #static
+5:1 ,       #dynamic
+6:2 ,       #ground
+7:3 ,       #road   
+8:4 ,       #sidewalk
+9:5 ,       #parking
+10:6 ,      #rail track
+11:7 ,      #building
+12:8 ,      #wall    
+13:9 ,      #fence
+14:10 ,     #guard rail
+15:11 ,     #bridge
+16:12 ,     #tunnel  
+17:13 ,     #pole   
+18:13 ,     #polegroup
+19:14 ,     #traffic light
+20:15 ,     #traffic sign
+21:16 ,     #vegetation
+22:17 ,     #terrain
+23:18,      #sky    
+24:19 ,     #person
+25:20 ,     #rider
+26:21 ,     #car   
+27:22 ,     #truck
+28:23 ,     #bus
+29:24 ,     #caravan
+30:25 ,     #trailer
+31:26 ,     #train
+32:27 ,     #motorcycle
+33:28       #bicycle
+}
+
+seg_id2index_np = np.array(
+    [0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28])
 
 # 30 colors -> 29 classes
+# not used now
 seg_color2index = {
 	(  0,  0,  0 ):0,
 	(  0,  0,142 ):0,
@@ -75,3 +152,5 @@ seg_color2index = {
     (  0,  0,230):27,			#motorcycle'           
     (119, 11, 32):28			#bicycle'             	
 }
+
+

@@ -16,6 +16,9 @@ from data_loader import Samplerian, DataLoaderian
 from data_utils import get_data
 from models import *
 from net_utils import *
+from cfg import cfg
+import warnings
+warnings.filterwarnings("ignore")
 
 from subprocess import call
 
@@ -116,7 +119,11 @@ if __name__ == '__main__':
 
 	####################### set up data loader for train and val ######################
 	n_classes, train_imgs, train_segs, train_masks, \
-	val_imgs, val_segs, val_masks = get_data(args.dataset, args.val)
+	val_imgs, val_segs, val_masks = get_data(args.dataset, flip=True, val=args.val)
+	# print("mean is ", np.mean(train_imgs, axis=(0,1,2)))
+	# print("var is ", np.var(train_imgs, axis=(0,1,2)))
+	# sys.stdout.flush()
+	# input("hahahha")
 
 	train_size = train_imgs.shape[0]
 	sampler_batch_train = Samplerian(train_size, args.batch_size)
@@ -129,24 +136,25 @@ if __name__ == '__main__':
 		dataset_val 	= DataLoaderian(val_imgs, val_segs, val_masks, n_classes, training=False)
 		dataloader_val = torch.utils.data.DataLoader(dataset_val, batch_size=val_size,
 														sampler=sampler_batch_val, num_workers=args.num_workers)
+	print("data loaded")
 
 	###################### set up model #####################
 	if args.model == "u_net":
 		model = Model(n_classes, "u_net")
 	elif args.model == "encoder_decoder":
 		model = Model(n_classes, "encoder_decoder")
-
+	print("model created")
 	###################### init variable #####################
 	im_data = torch.FloatTensor(1)
-	seg_data = torch.FloatTensor(1)
+	seg_data = torch.LongTensor(1)
 	mask_data = torch.FloatTensor(1)
-	gt_data = torch.LongTensor(1)
+	# gt_data = torch.LongTensor(1)
 
 	if args.cuda:
 		im_data = im_data.cuda()
 		seg_data = seg_data.cuda()
 		mask_data = mask_data.cuda()
-		gt_data =  gt_data.cuda()
+		# gt_data =  gt_data.cuda()
 		model.cuda()
 
 	if args.mGPUs:
@@ -171,6 +179,8 @@ if __name__ == '__main__':
 		from tensorboardX import SummaryWriter
 		logger = SummaryWriter("logs")
 
+	print("adventure start")
+	sys.stdout.flush()
 	for epoch in range(args.start_epoch, args.max_epochs + 1):
 		# setting to train mode
 		model.train()
@@ -187,10 +197,10 @@ if __name__ == '__main__':
 			seg_data.data.resize_(data[1].size()).copy_(data[1])
 			mask_data.data.resize_(data[2].size()).copy_(data[2])
 			# gt_data_i = squeeze_seg(data[1], n_classes)
-			gt_data.data.resize_(data[3].size()).copy_(data[3])
+			# gt_data.data.resize_(data[3].size()).copy_(data[3])
 			model.zero_grad()
 
-			output_segs, rec_loss = model(im_data, seg_data, mask_data, gt_data) 
+			output_segs, rec_loss = model(im_data, seg_data, mask_data) 
 			loss = rec_loss.mean()
 			loss_temp += float(loss.item())
 			# backward

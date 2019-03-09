@@ -19,12 +19,21 @@ class Model(nn.Module):
 		elif self.model_name == "encoder_decoder":
 			self.layer = EncoderDecoder(3, n_classes)
 
-	def forward(self, img, seg, mask, gt_data=None):
-		assert seg.size(1) == self.n_classes, seg.size()
+	def forward(self, img, seg, mask):
 		assert img.size(1) == 3, img.size()
-		output = self.layer(img, seg, mask)
+		assert len(seg.size()) == 3, seg.size()
+		assert len(mask.size()) == 3, mask.size()
+		mask = mask.unsqueeze(1)
+		seg_one_hot = transform_seg_one_hot(seg, self.n_classes)
+		img = img*mask
+		seg_one_hot = seg_one_hot*mask
 		if self.training:
-			self.reconst_loss = F.cross_entropy(output, gt_data, reduction='sum')
+			output = self.layer(img, seg_one_hot, mask)
+		else:
+			output = self.layer(img, seg_one_hot, mask)
+
+		if self.training:
+			self.reconst_loss = F.cross_entropy(output, seg, reduction='sum')
 			elems = (1-mask).nonzero().numel()
 			self.reconst_loss = self.reconst_loss / elems
 		# return squeeze_seg(output, self.n_classes), self.reconst_loss
