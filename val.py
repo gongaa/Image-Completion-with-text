@@ -108,18 +108,22 @@ if __name__ == '__main__':
 
 	###################### init variable #####################
 	im_data = torch.FloatTensor(1)
-	seg_data = torch.LongTensor(1)
+	seg_gt_data = torch.LongTensor(1)
+	seg_data = torch.FloatTensor(1)
 	mask_data = torch.FloatTensor(1)
-
 
 
 	if args.cuda:
 		im_data = im_data.cuda()
 		seg_data = seg_data.cuda()
 		mask_data = mask_data.cuda()
+		seg_gt_data = seg_gt_data.cuda()
 		model.cuda()
 
-
+	im_data =Variable(im_data)
+	seg_data =Variable(seg_data)
+	mask_data =Variable(mask_data)
+	seg_gt_data = Variable(seg_gt_data)
 
 	if args.mGPUs:
 		model = nn.DataParallel(model)
@@ -147,11 +151,13 @@ if __name__ == '__main__':
 	for step in range(iters_per_epoch):
 		data = next(data_iter)
 		im_data.data.resize_(data[0].size()).copy_(data[0])
-		seg_data.data.resize_(data[1].size()).copy_(data[1])
+		seg_gt_data.data.resize_(data[1].size()).copy_(data[1])
 		mask_data.data.resize_(data[2].size()).copy_(data[2])
+		seg_input = transform_seg_one_hot(seg_gt_data, n_classes)
+		seg_data.data.resize_(seg_input.size()).copy_(seg_input)
 
 		tic = time.time()
-		output_segs, rec_loss = model(im_data, seg_data, mask_data)
+		output_segs, rec_loss = model(im_data, seg_data, mask_data) 
 		eval_time = time.time() - tic
 		tic = time.time()
 		output_segs = torch.argmax(output_segs, dim=1)
@@ -162,7 +168,6 @@ if __name__ == '__main__':
 		# output_segs = np.vectorize(seg_index2color.get)(output_segs.cpu()).astype(np.uint8)
 		draw_time = time.time() - tic
 		tic = time.time()
-
 
 		for i in range(args.batch_size):
 			save_dir = save_folder + "/{}.png".format(img_count)

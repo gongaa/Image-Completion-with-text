@@ -20,7 +20,7 @@ def transform_seg_one_hot(seg, n_cls):
 			seg_one_hot  (bs, n_cls, h, w) float tensor
 
 	'''
-	seg_one_hot = torch.eye(n_cls)[seg].permute(0,3,1,2).cuda()
+	seg_one_hot = torch.eye(n_cls)[seg.long()].permute(0,3,1,2).cuda()
 	return seg_one_hot
 
 

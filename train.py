@@ -130,6 +130,11 @@ if __name__ == '__main__':
 	dataset_train 	= DataLoaderian(train_imgs, train_segs, train_masks, n_classes, training=True)
 	dataloader_train = torch.utils.data.DataLoader(dataset_train, batch_size=args.batch_size,
 													sampler=sampler_batch_train, num_workers=args.num_workers)
+	# train_size = train_imgs.shape[0]
+	# sampler_batch_train = Samplerian(train_size, args.batch_size)
+	# dataset_train 	= DataLoaderian(val_imgs, val_segs, val_masks, n_classes, training=True)
+	# dataloader_train = torch.utils.data.DataLoader(dataset_train, batch_size=args.batch_size,
+	# 												sampler=sampler_batch_train, num_workers=args.num_workers)
 	if args.val:
 		val_size = val_imgs.shape[0]
 		sampler_batch_val = Samplerian(val_size, val_size)
@@ -143,10 +148,13 @@ if __name__ == '__main__':
 		model = Model(n_classes, "u_net")
 	elif args.model == "encoder_decoder":
 		model = Model(n_classes, "encoder_decoder")
+
+	model.create_architecture()
 	print("model created")
 	###################### init variable #####################
 	im_data = torch.FloatTensor(1)
-	seg_data = torch.LongTensor(1)
+	seg_gt_data = torch.LongTensor(1)
+	seg_data = torch.FloatTensor(1)
 	mask_data = torch.FloatTensor(1)
 	# gt_data = torch.LongTensor(1)
 
@@ -154,8 +162,14 @@ if __name__ == '__main__':
 		im_data = im_data.cuda()
 		seg_data = seg_data.cuda()
 		mask_data = mask_data.cuda()
+		seg_gt_data = seg_gt_data.cuda()
 		# gt_data =  gt_data.cuda()
 		model.cuda()
+
+	im_data =Variable(im_data, requires_grad=True)
+	seg_data =Variable(seg_data, requires_grad=True)
+	mask_data =Variable(mask_data, requires_grad=True)
+	seg_gt_data = Variable(seg_gt_data, requires_grad=False)
 
 	if args.mGPUs:
 		model = nn.DataParallel(model)
@@ -184,6 +198,7 @@ if __name__ == '__main__':
 	for epoch in range(args.start_epoch, args.max_epochs + 1):
 		# setting to train mode
 		model.train()
+
 		loss_temp = 0
 		tic = time.time()
 		if epoch % (args.lr_decay_step + 1) == 0:
@@ -194,13 +209,20 @@ if __name__ == '__main__':
 		for step in range(iters_per_epoch):
 			data = next(data_iter)
 			im_data.data.resize_(data[0].size()).copy_(data[0])
-			seg_data.data.resize_(data[1].size()).copy_(data[1])
+			seg_gt_data.data.resize_(data[1].size()).copy_(data[1])
 			mask_data.data.resize_(data[2].size()).copy_(data[2])
+			seg_input = transform_seg_one_hot(seg_gt_data, n_classes)
+			seg_data.data.resize_(seg_input.size()).copy_(seg_input)
+
+			# print(model.state_dict()['layer.encoder.0.weight'].mean())
+			# print(model.state_dict()['layer.encoder.0.weight'].var())
 			# gt_data_i = squeeze_seg(data[1], n_classes)
 			# gt_data.data.resize_(data[3].size()).copy_(data[3])
 			model.zero_grad()
 
-			output_segs, rec_loss = model(im_data, seg_data, mask_data) 
+			output_segs, rec_loss = model(im_data, seg_data, mask_data, seg_gt_data) 
+			# output_segs = torch.argmax(output_segs, dim=1)
+
 			loss = rec_loss.mean()
 			loss_temp += float(loss.item())
 			# backward
