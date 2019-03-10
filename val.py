@@ -97,13 +97,15 @@ if __name__ == '__main__':
 	elif args.model == "encoder_decoder":
 		model = Model(n_classes, "encoder_decoder")
 
+	# model.create_architecture()
+
 	load_name = os.path.join(args.load_dir,
 		'{}_{}_{}_{}.pth'.format(args.model, args.checksession, args.checkepoch, args.checkpoint))
 
-	print("loading checkpoint %s" % (load_name))
-	checkpoint = torch.load(load_name)
-	model.load_state_dict(checkpoint['model'])
-	print("load checkpoint successfully !")
+	# print("loading checkpoint %s" % (load_name))
+	# checkpoint = torch.load(load_name)
+	# model.load_state_dict(checkpoint['model'])
+	# print("load checkpoint successfully !")
 
 
 	###################### init variable #####################
@@ -153,18 +155,28 @@ if __name__ == '__main__':
 		im_data.data.resize_(data[0].size()).copy_(data[0])
 		seg_gt_data.data.resize_(data[1].size()).copy_(data[1])
 		mask_data.data.resize_(data[2].size()).copy_(data[2])
-		seg_input = transform_seg_one_hot(seg_gt_data, n_classes)
+		
+		
+		
+		# seg_input = transform_seg_one_hot(seg_gt_data, n_classes)
+		seg_input = data[1].unsqueeze(1)
 		seg_data.data.resize_(seg_input.size()).copy_(seg_input)
 
 		tic = time.time()
 		output_segs, rec_loss = model(im_data, seg_data, mask_data) 
 		eval_time = time.time() - tic
 		tic = time.time()
+		
+		# print(output_segs[0,:,200,200])	
+
 		output_segs = torch.argmax(output_segs, dim=1)
+
+		# print(output_segs[0,195:200,195:200])	
 
 		assert list(output_segs.size()) == [args.batch_size, 1024, 2048], output_segs.size()
 
 		output_segs = seg_index2color_hash[output_segs.cpu()].astype(np.uint8)
+
 		# output_segs = np.vectorize(seg_index2color.get)(output_segs.cpu()).astype(np.uint8)
 		draw_time = time.time() - tic
 		tic = time.time()

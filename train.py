@@ -119,15 +119,15 @@ if __name__ == '__main__':
 
 	####################### set up data loader for train and val ######################
 	n_classes, train_imgs, train_segs, train_masks, \
-	val_imgs, val_segs, val_masks = get_data(args.dataset, flip=True, val=args.val)
+	val_imgs, val_segs, val_masks = get_data(args.dataset, flip=True, val=True)
 	# print("mean is ", np.mean(train_imgs, axis=(0,1,2)))
 	# print("var is ", np.var(train_imgs, axis=(0,1,2)))
 	# sys.stdout.flush()
 	# input("hahahha")
 
-	train_size = train_imgs.shape[0]
+	train_size = val_imgs.shape[0]
 	sampler_batch_train = Samplerian(train_size, args.batch_size)
-	dataset_train 	= DataLoaderian(train_imgs, train_segs, train_masks, n_classes, training=True)
+	dataset_train 	= DataLoaderian(val_imgs, val_segs, val_masks, n_classes, training=True)
 	dataloader_train = torch.utils.data.DataLoader(dataset_train, batch_size=args.batch_size,
 													sampler=sampler_batch_train, num_workers=args.num_workers)
 	# train_size = train_imgs.shape[0]
@@ -211,7 +211,10 @@ if __name__ == '__main__':
 			im_data.data.resize_(data[0].size()).copy_(data[0])
 			seg_gt_data.data.resize_(data[1].size()).copy_(data[1])
 			mask_data.data.resize_(data[2].size()).copy_(data[2])
+			# seg_gt_data.data.resize_(data[1].size()).copy_(data[1])
 			seg_input = transform_seg_one_hot(seg_gt_data, n_classes)
+			# seg_input = data[1].unsqueeze(1)
+			# print(seg_input[0,:,0,0])
 			seg_data.data.resize_(seg_input.size()).copy_(seg_input)
 
 			# print(model.state_dict()['layer.encoder.0.weight'].mean())

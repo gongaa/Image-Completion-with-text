@@ -28,13 +28,15 @@ class Model(nn.Module):
 		img = img*mask
 		seg = seg*mask
 
+
 		if self.training:
 			output = self.layer(img, seg, mask)
 		else:
 			output = self.layer(img, seg, mask)
-		# print(torch.mean(output))
-		# print(torch.var(output))
-		output = output*(1-mask) + seg
+
+		print(output[0,:,200,200])
+
+		output = output*(1-mask) + seg#transform_seg_one_hot(seg_gt, self.n_classes)*mask
 
 		if self.training:
 			self.reconst_loss = F.cross_entropy(output, seg_gt, reduction='sum')
