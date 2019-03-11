@@ -9,9 +9,9 @@ class EncoderDecoder(nn.Module):
 		super(EncoderDecoder, self).__init__()
 		self.n_classes = n_classes
 		self.encoder = nn.Sequential(
-			nn.Conv2d(in_channels=n_channels, out_channels=32, kernel_size=5, stride=1, padding=2), # n_channels Y
+			nn.Conv2d(in_channels=n_channels, out_channels=64, kernel_size=5, stride=1, padding=2), # n_channels Y
 				nn.ReLU(),
-			nn.Conv2d(32, 64, 3, 2, 1),
+			nn.Conv2d(64, 64, 3, 2, 1),
 				nn.ReLU(),
 			nn.Conv2d(64, 64, 3, 1, 1),
 				nn.ReLU(),

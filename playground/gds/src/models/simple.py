@@ -16,7 +16,7 @@ class Simple(nn.Module):
 		self.n_classes = n_classes
 		self.reconst_loss = None 
 		self.model_name = model_name
-		self.weight = torch.tensor([0.19, 0.45, 0.29, 0.13, 0.2, 0.33, 0.48, 0.14, 0.36, 0.34, 1.0, 0.43, 0.66, 0.33, 0.51, 0.41, 0.17, 0.31, 0.19, 0.33, 0.57, 0.21, 0.48, 0.49, 0.75, 0.88, 0.49, 0.61, 0.42]).cuda()
+		self.weight = [0.19, 0.45, 0.29, 0.13, 0.2, 0.33, 0.48, 0.14, 0.36, 0.34, 1.0, 0.43, 0.66, 0.33, 0.51, 0.41, 0.17, 0.31, 0.19, 0.33, 0.57, 0.21, 0.48, 0.49, 0.75, 0.88, 0.49, 0.61, 0.42]
 		if embedding_dim is None:
 			self.embedding = lambda x : x
 		else:
@@ -33,24 +33,18 @@ class Simple(nn.Module):
 		# assert len(mask.size()) == 3, mask.size()
 		num_cls = onehot.size(-1)
 		assert num_cls == 29, 'number of class not equal to onehot last dimension'
-		# seg = torch.zeros(seg_gt.size())
-		# seg.copy_(seg_gt)
-		# seg = seg.long().cuda()
-		with torch.no_grad():
-			seg = seg_gt.clone().long()
-			seg[mask] = self.n_classes	# set where mask=1(cropped) to indice num_cls=29
-		x2 = self.embedding(seg)		# x2 in shape (N,H,W,embedding_dim)
-		# x2.transpose_(1,3).transpose_(2,3)		# x2 in shape (N,embedding_dim, H,W)
-		x2 = x2.permute(0, 3, 1, 2).contiguous()
+		seg_np = seg_gt.numpy()
+		mask_np = mask.numpy()
+		mask_np = mask_np.astype(bool)
+		seg_np[mask_np] = self.n_classes	# set where mask=1(cropped) to indice num_cls=29
+		x1 = torch.from_numpy(seg_np)
+		x2 = self.embedding(x1)		# x2 in shape (N,H,W,embedding_dim)
+		x2.transpose_(1,3).transpose_(2,3)		# x2 in shape (N,embedding_dim, H,W)
 		x3 = self.layer(x2)			# x3 in shape (N,num_class,H,W)
 
 		# print(output[0,:,200,200])
-		assert not mask.requires_grad
-		assert not seg_gt.requires_grad
-		seg_gt = seg_gt.long()
-		seg_one_hot = torch.eye(self.n_classes)[seg_gt].permute(0,3,1,2).cuda()
-		assert not seg_one_hot.requires_grad
-		output = x3*mask.unsqueeze(1).float() + seg_one_hot #transform_seg_one_hot(seg_gt, self.n_classes)*mask
+		seg_one_hot = torch.eye(self.n_classes)[seg_gt.long()].permute(0,3,1,2).cuda()
+		output = x3*mask.unsqueeze(1) + seg_one_hot #transform_seg_one_hot(seg_gt, self.n_classes)*mask
 
 		if self.training:
 			self.reconst_loss = F.cross_entropy(input=output, weight=self.weight, target=seg_gt, reduction='sum')

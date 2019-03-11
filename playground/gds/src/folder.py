@@ -99,7 +99,9 @@ def pil_loader_RGB(path):
 
 def pil_loader_8bit(path):
     # open path as file to avoid ResourceWarning (https://github.com/python-pillow/Pillow/issues/835)
-    return Image.open(path)
+    with open(path, 'r') as f:
+        img = Image.open(f)
+        return img
 
 def default_loader(path):
     return pil_loader_8bit(path)
@@ -221,4 +223,4 @@ def add_mask_onehot(file):
             lin_idx = label2index[objects_list[idx]['label']] # label that lin set
             one_hot[lin_idx] = one_hot[lin_idx] + 1 
         
-    return mask.byte(), one_hot
+    return mask, one_hot
