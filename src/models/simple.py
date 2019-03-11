@@ -11,35 +11,40 @@ __all__ = ['simple29_unet', 'simple29_encoderdecoder']
 class Simple(nn.Module):
 	'''
 	'''
-	def __init__(self, n_classes, model_name="u_net"):
+	def __init__(self, n_classes, embedding_dim, model_name="u_net"):
 		super(Simple, self).__init__()
 		self.n_classes = n_classes
 		self.reconst_loss = None 
 		self.model_name = model_name
 		self.weight = [0.19, 0.45, 0.29, 0.13, 0.2, 0.33, 0.48, 0.14, 0.36, 0.34, 1.0, 0.43, 0.66, 0.33, 0.51, 0.41, 0.17, 0.31, 0.19, 0.33, 0.57, 0.21, 0.48, 0.49, 0.75, 0.88, 0.49, 0.61, 0.42]
+		if embedding_dim is None:
+			self.embedding = lambda x : x
+		else:
+			self.embedding = torch.nn.Embedding(num_embeddings=30, embedding_dim=embedding_dim) # 29+1(cropped)
 		if self.model_name == "u_net":
 			self.layer = UNet(3, n_classes)
 		elif self.model_name == "encoder_decoder":
-			self.layer = EncoderDecoder(3, n_classes)
+			self.layer = EncoderDecoder(n_channels=embedding_dim, n_classes=n_classes)
 
 	def forward(self, mask, onehot, img=None, seg_gt=None):
 		# assert img.size(1) == 3, img.size()
-		assert len(seg.size()) == 4, seg.size()
-		assert len(mask.size()) == 3, mask.size()
-		mask = mask.unsqueeze(1)
-
-		img = img*mask
-		seg = seg*mask
-
-
-		if self.training:
-			output = self.layer(img, seg, mask)
-		else:
-			output = self.layer(img, seg, mask)
+		# mask (N,H,W), seg_gt (N,H,W), onehot (N,cls)
+		# assert len(seg.size()) == 4, seg.size()
+		# assert len(mask.size()) == 3, mask.size()
+		num_cls = onehot.size(-1)
+		assert num_cls == 29, 'number of class not equal to onehot last dimension'
+		seg_np = seg_gt.numpy()
+		mask_np = mask.numpy()
+		mask_np = mask_np.astype(bool)
+		seg_np[mask_np] = self.n_classes	# set where mask=1(cropped) to indice num_cls=29
+		x1 = torch.from_numpy(seg_np)
+		x2 = self.embedding(x1)		# x2 in shape (N,H,W,embedding_dim)
+		x2.transpose_(1,3).transpose_(2,3)		# x2 in shape (N,embedding_dim, H,W)
+		x3 = self.layer(x2)			# x3 in shape (N,num_class,H,W)
 
 		# print(output[0,:,200,200])
-
-		output = output*(1-mask) + seg #transform_seg_one_hot(seg_gt, self.n_classes)*mask
+		seg_one_hot = torch.eye(self.n_classes)[seg_gt.long()].permute(0,3,1,2).cuda()
+		output = x3*mask.unsqueeze(1) + seg_one_hot #transform_seg_one_hot(seg_gt, self.n_classes)*mask
 
 		if self.training:
 			self.reconst_loss = F.cross_entropy(input=output, weight=self.weight, target=seg_gt, reduction='sum')
@@ -51,8 +56,8 @@ class Simple(nn.Module):
 		return output, self.reconst_loss
 
 
-def simple29_unet():
-	return Simple(29, 'u_net')
+def simple29_unet(embedding_dim=15):
+	return Simple(29, embedding_dim=embedding_dim, model_name='u_net')
 
-def simple29_encoderdecoder():
-	return Simple(29, 'encoder_decoder')
+def simple29_encoderdecoder(embedding_dim=15):
+	return Simple(29, embedding_dim=embedding_dim, model_name='encoder_decoder')

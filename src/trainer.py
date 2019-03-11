@@ -25,7 +25,7 @@ from cfg import cfg
 
 def get_model(args):
 	# build model
-	model = models.__dict__[args.arch](args.bits)
+	model = models.__dict__[args.arch](args.embedding_dim)
 
 	# load model
 	if args.ckpt is not None:
@@ -105,7 +105,7 @@ class Trainer:
 			seg = seg.cuda(self.args.rank, non_blocking=True)
 			mask = mask.cuda(self.args.rank, non_blocking=True)
 			onehot = onehot.cuda(self.args.rank, non_blocking=True)
-			loss = self.model(seg_gt=seg, mask=mask, onehot=onehot)
+			loss = self.model(seg_gt=seg, mask=mask, onehot=onehot, emd=args.embedding_dim)
 
 			# loss and accuracy
 			self.sync([loss])

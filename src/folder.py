@@ -187,7 +187,7 @@ label2index = {
 def add_mask_onehot(file):
     with open(file, 'r') as f:
         text = json.load(f)
-    mask = torch.ones((img_h,img_w))
+    mask = torch.zeros((img_h,img_w))
     objects_list = text['objects']
     # sort object according to their idx
     objects_list = sorted(objects_list, key=lambda k: k['idx'])
@@ -210,7 +210,7 @@ def add_mask_onehot(file):
         rand_y1 = randint(y_1, y_2-rand_h)
         rand_x2 = rand_x1 + rand_w
         rand_y2 = rand_y1 + rand_h
-        mask[rand_y1:rand_y2, rand_x1:rand_x2] = 0
+        mask[rand_y1:rand_y2, rand_x1:rand_x2] = 1
 #         print("axis",rand_x1,rand_x2,rand_y1,rand_y2)
         break
 

@@ -90,6 +90,8 @@ def main():
 						default=8, help='Batch size (over multiple gpu)')
 	parser.add_argument('-e', '--epoch', type=int,
 						default=20, help='Number of training epochs')
+	parser.add_argument('-emb', '--embdding_dim', type=int,
+						default=15, help="embedding dimension")
 	# idstributed training
 	parser.add_argument('-j' '--workers', type=int, default=4,
 						help='Number of data loading workers')

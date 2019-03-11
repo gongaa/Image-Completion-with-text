@@ -9,7 +9,7 @@ class EncoderDecoder(nn.Module):
 		super(EncoderDecoder, self).__init__()
 		self.n_classes = n_classes
 		self.encoder = nn.Sequential(
-			nn.Conv2d(n_classes, 64, 5, 1, 2), # n_channels Y
+			nn.Conv2d(in_channels=n_channels, out_channels=64, kernel_size=5, stride=1, padding=2), # n_channels Y
 				nn.ReLU(),
 			nn.Conv2d(64, 64, 3, 2, 1),
 				nn.ReLU(),
@@ -49,8 +49,8 @@ class EncoderDecoder(nn.Module):
 		)
 
 
-	def forward(self, img, seg, mask):
-		bs,c,h,w = img.size()
+	def forward(self, seg):
+		# bs,c,h,w = img.size()
 		# x = torch.cat([img, seg], dim=1)
 
 
@@ -59,7 +59,8 @@ class EncoderDecoder(nn.Module):
 		x = self.bottle_neck(x)
 		x = self.decoder(x)
 		
-		x = torch.clamp(x, -1, 1)
+		# x = torch.clamp(x, -1, 1)
+
 		# x = x*(1-mask) + seg
 		# assert x.size() == [bs, self.n_classes, h, w], [ img.size(), x.size() ]
 		# try my probability map first
